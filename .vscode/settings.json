@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^& \"C:\\\\Program Files\\\\Git\\\\bin\\\\git\\.exe\" add \\.$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

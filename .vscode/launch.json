@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run CLI with n69ap 15.7",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/cli.py",
+            "args": ["-m", "n69ap", "-s", "15.7"],
+            "console": "integratedTerminal"
+        }
+    ]
+}
