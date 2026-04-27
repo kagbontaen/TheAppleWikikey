@@ -37,6 +37,9 @@ print(keys)
 
 ```bash
 python cli.py -p iPhone10,6 -s 16.0
+python cli.py -m n66ap -s 15.0.1  # Using device model
+python cli.py -p iPhone9,3 -b 19H370  # Using build ID
+python cli.py --bulk "iPhone9,3,15.0.1,19H370" "iPhone10,6,16.0" --debug
 ```
 
 ## Notes

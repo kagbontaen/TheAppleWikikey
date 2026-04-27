@@ -3,50 +3,49 @@ import argparse
 import json
 import sys
 from theapplewiki_api import AppleWikiClient
+from theapplewiki_api.utils import map_model_to_product, fetch_firmware_keys
 
 def main():
-    parser = argparse.ArgumentParser(
-        description='Fetch iOS firmware keys from TheAppleWiki',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  python cli.py -p iPhone10,6 -s 16.0
-  python cli.py --device iPhone12,1 --version 15.4 --debug
-        """
-    )
-    parser.add_argument(
-        '-p', '--device',
-        required=True,
-        help='Device identifier (e.g., iPhone10,6)'
-    )
-    parser.add_argument(
-        '-s', '--version',
-        required=True,
-        help='iOS version (e.g., 16.0)'
-    )
-    parser.add_argument(
-        '--debug',
-        action='store_true',
-        help='Enable debug output'
-    )
-
+    parser = argparse.ArgumentParser(description="Fetch iOS firmware keys from TheAppleWiki")
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("-p", "--product", help="Device identifier, e.g., iPhone9,3")
+    group.add_argument("-m", "--model", help="Device model, e.g., n66ap (will be converted to product identifier)")
+    parser.add_argument("-s", "--ios", help="iOS version, e.g., 15.0.1")
+    parser.add_argument("-b", "--build", help="Firmware build, e.g., 19H370")
+    parser.add_argument("--bulk", nargs="+", help="Bulk fetch: space-separated list of product,version,build triples, e.g., 'iPhone9,3,15.0.1,19H370'")
+    parser.add_argument("-d", "--debug", action="store_true", help="Enable debug output")
     args = parser.parse_args()
 
-    client = AppleWikiClient(debug=args.debug)
+    # Resolve product from model if needed
+    product = args.product
+    if args.model:
+        print(f"[*] Mapping model {args.model} to product identifier...")
+        product = map_model_to_product(args.model)
+        if not product:
+            print(f"[-] Could not map model {args.model} to a product identifier")
+            return
+        print(f"[+] Mapped to product: {product}")
 
-    try:
-        keys = client.get_keys(args.device, args.version)
+    if args.bulk:
+        for entry in args.bulk:
+            parts = entry.split(",")
+            prod = parts[0]
+            version = parts[1] if len(parts) > 1 and parts[1] else None
+            build = parts[2] if len(parts) > 2 and parts[2] else None
+            if not version and not build:
+                print(f"[-] Entry '{entry}' must include at least version or build")
+                continue
+            fetch_firmware_keys(prod, version, build, debug=args.debug)
+    else:
+        if not args.ios and not args.build:
+            parser.error("You must provide at least one of --ios (-s) or --build (-b)")
+        client = AppleWikiClient(debug=args.debug)
+        keys = client.get_keys(product, args.ios, args.build)
         if keys:
             print(json.dumps(keys, indent=2))
         else:
-            print("No keys found for the specified device and version.", file=sys.stderr)
+            print("No keys found", file=sys.stderr)
             sys.exit(1)
-    except KeyboardInterrupt:
-        print("\nInterrupted by user", file=sys.stderr)
-        sys.exit(1)
-    except Exception as e:
-        print(f"Error: {e}", file=sys.stderr)
-        sys.exit(1)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
